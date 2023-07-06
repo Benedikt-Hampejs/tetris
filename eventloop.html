@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="canvas" width="500" height="1000" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML canvas tag.</canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const context = canvas.getContext("2d");
+const STONE_SIZE = 50;
+const CANVAS_HEIGHT = 800
+const CANVAS_WIDTH = 500
+const SUM_TO_FINISH_ROW = CANVAS_WIDTH / STONE_SIZE *  (CANVAS_WIDTH / STONE_SIZE - 1) / 2 * STONE_SIZE
+var y = -STONE_SIZE
+var x = STONE_SIZE
+
+let stones = []
+let droppingStone = {x, y} 
+canvas.height = CANVAS_HEIGHT;
+canvas.width = CANVAS_WIDTH;
+
+function deleteFullRows() {
+    const rowSums = []
+    const rowsToDelete = [];
+    for (let i = 0; i < stones.length; i++) {
+        let row = rowSums.find((row) => row.y == stones[i].y)
+        if (!row) {
+            row = {y: stones[i].y, xSum: stones[i].x}
+            rowSums.push(row);
+        } else {
+            row.xSum += stones[i].x; 
+            if (row.xSum == SUM_TO_FINISH_ROW) {
+                rowsToDelete.push(row.y);
+            }
+        }
+    }
+    rowsToDelete.forEach((rowY) => {
+        stones = stones.filter((s) => s.y !== rowY);
+    })
+    rowsToDelete.forEach((rowY) => {
+        stones.forEach((stone) => {
+            if(stone.y < rowY) {
+                stone.y += STONE_SIZE;
+            }
+        })
+    })
+}
+
+function moveStoneLeft() {
+    if(droppingStone.x > 0) {
+        droppingStone.x -= STONE_SIZE
+    }
+}
+
+function moveStoneRight() {
+    if(droppingStone.x + STONE_SIZE < CANVAS_WIDTH) {
+        droppingStone.x += STONE_SIZE
+    }
+}
+
+function isStoneBelow() {
+    return  isPositionTaken(droppingStone.x, droppingStone.y + STONE_SIZE);
+}
+
+function isStoneLeft() {
+    return  isPositionTaken(droppingStone.x - STONE_SIZE, droppingStone.y);
+}
+
+function isStoneRight() {
+    return  isPositionTaken(droppingStone.x + STONE_SIZE, droppingStone.y);
+}
+
+function isPositionTaken(x, y) {
+    let stoneTaken = false
+    const foundStone = stones.find((s) => s.x == x && s.y == y);
+    console.log("foundStone", foundStone);
+    return foundStone
+}
+
+function isStoneTouchingBottom() {
+    return droppingStone.y < CANVAS_HEIGHT - STONE_SIZE;
+}
+
+function moveStoneDown() {
+    droppingStone.y += STONE_SIZE;
+}
+
+function makeNextStep() {
+    if(isStoneTouchingBottom() && !isStoneBelow()) {
+        moveStoneDown()
+    } else {
+        stones.push(droppingStone);
+        deleteFullRows()
+
+        droppingStone = {x, y};
+    }
+}
+
+function drawGame() {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < stones.length; i++) {
+        context.beginPath();
+        context.lineWidth = "1";
+        context.strokeStyle = "blue";
+        context.rect(stones[i].x, stones[i].y, STONE_SIZE, STONE_SIZE);
+        context.stroke();
+    }
+
+    context.beginPath();
+    context.lineWidth = "1";
+    context.strokeStyle = "blue";
+    context.rect(droppingStone.x, droppingStone.y, STONE_SIZE, STONE_SIZE);
+    context.stroke();
+
+}
+
+
+function startGameLoop() {
+    setTimeout(() => {    
+        makeNextStep();  
+        drawGame();
+        startGameLoop();
+    }, 100)
+    
+}
+
+startGameLoop();
+
+document.onkeydown = checkKey;
+
+function checkKey(e) {
+
+    e = e || window.event;
+
+    if (e.keyCode == '38') {
+        // up arrow
+    }
+    else if (e.keyCode == '40') {
+        makeNextStep()
+        drawGame()
+    }
+    else if (e.keyCode == '37') {
+        if (!isStoneLeft()) {
+            moveStoneLeft();
+            drawGame()
+        }
+    }
+    else if (e.keyCode == '39') {
+        if(!isStoneRight()) {
+            moveStoneRight();
+            drawGame()
+        }
+    }
+
+}
+</script> 
+
+</body>
+</html>
+
